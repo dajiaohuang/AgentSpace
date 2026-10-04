@@ -363,6 +363,47 @@ describe("WorkspaceModuleCacheProvider", () => {
     expect(observedStatuses).toContain("ready");
   });
 
+  it("keeps the forced refresh when the cancelled older loader resolves later", async () => {
+    const { getApi } = renderCacheProbe();
+    let resolveOlder!: (data: { value: string }) => void;
+    let olderRequest!: Promise<{ value: string }>;
+    act(() => {
+      olderRequest = getApi().load({
+        cacheKey,
+        loader: () => new Promise((resolve) => { resolveOlder = resolve; }),
+      });
+    });
+
+    await act(async () => {
+      await getApi().load({ cacheKey, force: true, loader: async () => ({ value: "fresh" }) });
+    });
+    await act(async () => {
+      resolveOlder({ value: "outdated" });
+      await olderRequest;
+    });
+
+    expect(getApi().get<{ value: string }>(cacheKey)?.data?.value).toBe("fresh");
+  });
+
+  it("does not recreate a cleared workspace entry when its cancelled loader resolves", async () => {
+    const { getApi } = renderCacheProbe();
+    let resolveOlder!: (data: { value: string }) => void;
+    let olderRequest!: Promise<{ value: string }>;
+    act(() => {
+      olderRequest = getApi().load({
+        cacheKey,
+        loader: () => new Promise((resolve) => { resolveOlder = resolve; }),
+      });
+    });
+    act(() => { getApi().clearWorkspace(cacheKey.workspaceId); });
+    await act(async () => {
+      resolveOlder({ value: "outdated" });
+      await olderRequest;
+    });
+
+    expect(getApi().get(cacheKey)).toBeUndefined();
+  });
+
   it("keeps stale data for normal load failures and clears it for forbidden failures", async () => {
     const { getApi } = renderCacheProbe();
 

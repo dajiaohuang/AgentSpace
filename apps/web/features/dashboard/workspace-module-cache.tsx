@@ -258,8 +258,14 @@ export function WorkspaceModuleCacheProvider({
 
     const promise = loader({ signal: controller.signal })
       .then((data) => {
+        if (controller.signal.aborted) {
+          return data;
+        }
         const loadedMetadata = typeof metadata === "function" ? metadata(data) : metadata;
         setEntries((current) => {
+          if (controller.signal.aborted) {
+            return current;
+          }
           const next = new Map(current);
           next.set(normalizedKey.cacheKey, {
             status: "ready",
@@ -280,6 +286,9 @@ export function WorkspaceModuleCacheProvider({
           throw error;
         }
         setEntries((current) => {
+          if (controller.signal.aborted) {
+            return current;
+          }
           const next = new Map(current);
           const previousEntry = current.get(normalizedKey.cacheKey);
           const isForbidden = forbidden?.(error) ?? false;

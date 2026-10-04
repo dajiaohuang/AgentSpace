@@ -40,7 +40,11 @@ export function useWorkspaceShellCounters({
         }
         return response.json() as Promise<{ data: WorkspaceShellCounters }>;
       })
-      .then((payload) => setCounters(payload.data))
+      .then((payload) => {
+        if (!controller.signal.aborted) {
+          setCounters((current) => controller.signal.aborted ? current : payload.data);
+        }
+      })
       .catch((error) => {
         if (!(error instanceof DOMException && error.name === "AbortError")) {
           console.debug("[workspace:shell-counters] refresh failed", error);
@@ -53,7 +57,7 @@ export function useWorkspaceShellCounters({
       });
   }, [workspaceSlug]);
 
-  useEffect(() => () => pendingRequestRef.current?.abort(), []);
+  useEffect(() => () => pendingRequestRef.current?.abort(), [workspaceSlug]);
 
   return { counters, refreshCounters };
 }
