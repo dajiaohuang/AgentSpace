@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -67,7 +67,9 @@ test("CubeSandbox.exec throws a not-ready error until remote exec is wired", asy
 });
 
 test("CubeSandbox.snapshot falls back to a local snapshot when the Cube route is unavailable", async () => {
-  const workDir = await mkdtemp(join(tmpdir(), "agent-space-cube-snapshot-"));
+  const tempRoot = await mkdtemp(join(tmpdir(), "agent-space-cube-snapshot-"));
+  const workDir = join(tempRoot, "work");
+  await mkdir(workDir);
   await writeFile(join(workDir, "notes.txt"), "hello cube\n", "utf8");
 
   await withCubeFetchStub(async ({ url, method }) => {
@@ -112,8 +114,7 @@ test("CubeSandbox.snapshot falls back to a local snapshot when the Cube route is
       assert.equal(copiedFile, "hello cube\n");
       assert.ok(snapshotPath.includes(".snapshots"));
     } finally {
-      await rm(workDir, { recursive: true, force: true });
-      await rm(join(workDir, "..", ".snapshots"), { recursive: true, force: true });
+      await rm(tempRoot, { recursive: true, force: true });
     }
   });
 });
