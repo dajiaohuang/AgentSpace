@@ -357,6 +357,7 @@ test("syncs Feishu metadata snapshots into channel documents and data tables", (
     },
   });
   const metadataDependencies: FeishuResourceMetadataSyncDependencies = {
+    readDataTable: fakeTables.dependencies.readDataTable,
     updateExternalChannelDocumentMetadata: fakeDocuments.dependencies.updateExternalChannelDocumentMetadata,
     updateExternalDataTableMetadata: fakeTables.dependencies.updateExternalDataTableMetadata,
   };

@@ -176,6 +176,7 @@ export interface FeishuApprovedDataTableWriteSyncDependencies {
 }
 
 export interface FeishuResourceMetadataSyncDependencies {
+  readDataTable(tableId: string, workspaceId?: string): DataTable | null;
   updateExternalChannelDocumentMetadata(
     input: Parameters<typeof updateExternalChannelDocumentMetadataSync>[0],
     workspaceId?: string,
@@ -505,6 +506,7 @@ export function syncFeishuResourceMetadataSnapshotSync(input: {
     snapshot,
     updatedBy: input.updatedBy,
   }, {
+    readDataTable: readOptionalDataTable,
     updateExternalChannelDocumentMetadata: updateExternalChannelDocumentMetadataSync,
     updateExternalDataTableMetadata: updateExternalDataTableMetadataSync,
   });
@@ -536,6 +538,7 @@ export function syncFeishuResourceMetadataSnapshotFromResultSync(input: {
     snapshot,
     updatedBy: input.updatedBy,
   }, {
+    readDataTable: readOptionalDataTable,
     updateExternalChannelDocumentMetadata: updateExternalChannelDocumentMetadataSync,
     updateExternalDataTableMetadata: updateExternalDataTableMetadataSync,
   });
@@ -578,6 +581,7 @@ export function syncFeishuResourceMetadataSnapshotWithDependenciesForTests(
     }
     if (input.binding.agentSpaceResourceType === "data_table") {
       const bindingMetadata = readJsonObject(input.binding.metadataJson);
+      const table = dependencies.readDataTable(input.binding.agentSpaceResourceId, input.workspaceId);
       dependencies.updateExternalDataTableMetadata(input.binding.agentSpaceResourceId, {
         name: snapshot.title,
         externalProvider: "feishu",
@@ -587,6 +591,7 @@ export function syncFeishuResourceMetadataSnapshotWithDependenciesForTests(
         externalSyncStatus: snapshot.syncStatus,
         externalUpdatedAt: snapshot.externalUpdatedAt,
         externalMetadata: {
+          ...(asRecord(table?.externalMetadata) ?? {}),
           ...bindingMetadata,
           metadataSnapshot: snapshot,
         },

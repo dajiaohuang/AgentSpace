@@ -39,6 +39,7 @@ import {
   createExternalDataTableSync,
   initializeOrganizationSync,
   listApprovalsSync,
+  readDataTableSync,
   resetWorkspaceStateSync,
 } from "../../../../index.ts";
 
@@ -626,6 +627,16 @@ test("approved Feishu Sheet writes update a pending operation run with a safe re
   });
 
   assert.equal(approved.result.ok, true, JSON.stringify(approved.result));
+  const syncedTable = readDataTableSync(table.id, workspace.id);
+  assert.ok(syncedTable);
+  assert.equal(
+    (syncedTable.externalMetadata?.lastApprovedWrite as Record<string, unknown> | undefined)?.runId,
+    pending.runId,
+  );
+  assert.equal(
+    (syncedTable.externalMetadata?.metadataSnapshot as Record<string, unknown> | undefined)?.revisionId,
+    "17",
+  );
   assert.deepEqual(requests, [{
     method: "PUT",
     path: "/open-apis/sheets/v2/spreadsheets/shtcnBound123/values",
